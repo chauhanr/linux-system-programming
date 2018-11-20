@@ -50,4 +50,8 @@ There can be multiple file descriptors to one open file and many a times it is n
 
 ![File Data structures](./images/file-data-structures.png)
 
+* In process A descriptors 1 and 20 both refer to the same open file descriptor 23 and this can occur when we call the dup() or dup2() methods 
+* Descriptor 2 of process A and B point to the same file descriptor 73. This scenario occurs when we have a fork() command being executed. 
+* Descriptor 0 or process A and descriptor 3 in process B point to different opne file descriptors 0 and 86 but both these eventually map to one inode 1976. this scenario occurs when we call open() on same file from different processes. 
+
 
