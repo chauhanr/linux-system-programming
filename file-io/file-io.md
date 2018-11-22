@@ -128,3 +128,73 @@ int ftruncate(int fd, off_t length);
 
 if the size of the file is more than the length specified the excess data is lost and if the size if less than the length specified then the extra space is padded with null bytes. 
 
+
+## Nonblocking i/o 
+The non blocking flag O_NONBLOCK on a file serves two purposes: 
+* If the file can't be opened immediately, then open() returns an error instead of blocking. e.g. is opening a   FIFO file. 
+* after opening a file subsequent operations on them will also be non blocking. if the system call can't complete immediately, then either a partial data transfer will be initiated or a system call fails with one of errors EAGAIN or EWOULDBLOCK. 
+
+Nonblockign mode can be used with devices (terminal) as well as pipes, FIFO and sockets. O_NONBLOCK generally igonores regular files, because the kernel buffer cache ensures that I/O on regular file does not block. However in the case of mandartory locking this flag is essential. 
+
+## I/O on large files 
+The off_t data type which is used to hold the current offset to a file is typically implemented as a signed long integer. due to this the off_t on a 32bit architecture can only handle 2GB files at maximum. To overcome this limitation the LFS (large file summit) was set up to make specification to handle larger files. 
+As a result 64 bit version of off_t were instituted which can handle much larger files. 
+
+There are 2 ways LFS functionality can be handled: 
+1. use an alternative API to support large files. this was a transitional approach and is now obsolete. 
+2. define the _FILE_OFFSET_BITS macro with value 64 when compiling our programs. This allows for the program to handle large files with not change in source code. 
+
+The file offset bit setting  can be achieved by: 
+```
+   $ cc -D_FILE_OFFSET_BITS=64 prog.c 
+
+   /* define the value in the file itself.*/
+   #define _FILE_OFFSET_BITS 64 
+```
+
+With the setting made above the calls like open() are converted to open64() etc. Another problem with sending off_t to printf under the LFS but we need to use long long as a cast
+
+```
+#define _FILE_OFFSET_BITS 64
+off_t offset; 
+
+printf("offset=%11d\n", (long long) offset); 
+```
+
+## The /dev/fd directory 
+For each process the kernel provides a virtual directory /dev/fd/n where n denotes the file descriptor used by the process.
+
+opening any of the /dev/fd/n files is equivalent to duplication of that file so the following bits of code are the same. 
+
+```
+  fd = open("/dev/fd/1", O_WRONLY); 
+  fd = dup(1); /* Dupliacting std out*/ 
+```
+
+> /dev/fd is actually a symbolic link to Linux specific /proc/self/fd directory which is also linked to /proc/PID/fd which contains the links to all the files opened by the PID. 
+
+To make it easier to under stand the /dev/fd/0, /dev/fd/1 and /dev/fd/2 are pointed to by the following links respectively  /dev/stdin, /dev/stdout and /dev/stderr
+
+## Creating Temporary files 
+there are various programs that need to create temp files during their processing which need to be deleted at the end of the program. The system call mkstemp() helps with this functionality. 
+
+```
+int fd; 
+char template[] = "/tmp/somestringXXXXXX";
+
+fd = mkstemp(template); 
+if (fd ==-1) 
+   errExit("mkstemp"); 
+
+printf("Generating filename: %s\n", template); 
+unlink(template);   /* this will make name disappear from directory but file is removed only on close.*/
+
+/*  Use file i/o to read and write to the file. **/
+
+if( close(fd) == -1) 
+    errExit("close"); 
+```
+
+the file name provided has 6 'X' and they are replaced by the kernel to make the file name unique. 
+
+
