@@ -9,3 +9,4 @@ The reason for the creation of this project is that I want to document the syste
 ## Contents 
 * [File I/O functionality](file-io/file-io.md)
 * [Processes](processes/processes.md)
+* [Memory Allocation](processes/memory.md)
