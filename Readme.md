@@ -7,6 +7,7 @@ The reason for the creation of this project is that I want to document the syste
 * See if I can find libraries in golang to accomplish the same or if there is a possibility to create a utility. 
 
 ## Contents 
-* [File I/O functionality](file-io/file-io.md)
-* [Processes](processes/processes.md)
-* [Memory Allocation](processes/memory.md)
+01. [File I/O functionality](file-io/file-io.md)
+02. [Processes](processes/processes.md)
+03. [Memory Allocation](processes/memory.md)
+04. [System](system/system.md)
