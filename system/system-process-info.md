@@ -38,9 +38,27 @@ VmPeaK: 852k                     /* peak virtual memory size of this process */
 ... 
 ```
 
-**/proc/1/fd** - this is a folder that gives a list of all file descriptors that a process has opened or is accessing. 
+**/proc/1/fd** - this gives the file descriptors of all the files that have been opened by the PID 1.  e.g. /proc/1968/1 gives the symbolic link for the standard output. 
 
-**/proc/{pid}/task** - this list gives information about a process that is not easy to get. the task correspond to threads in the proecess. 
+**/proc/{pid}/task** this directory holds the files that correspond to each thread in the process denoted by {pid}. There are other subdirectories given by the {tid} which denotes the thread id. Since most threads in a process share resources but still having attributes under different thread ids is good to have. 
 
+## System information under /proc 
+
+|Directory         | Information expose via the directory                        | 
+|------------------|:------------------------------------------------------------|
+| /proc/net        | status information about network and sockets. 	       | 
+| /proc/sys/fs     | settings related to file systems                            | 
+| /proc/sys/kernel | various kernel settings                                 | 
+| /proc/sys/net    | network and socket settings                | 
+| /proc/sys/vm     | memory management settings                 | 
+| /proc/sysvipc    | Information about system v IPC object      | 
+
+## uname getting system information 
+In a single command we can get the following information: 
+1. sysname
+2. release 
+3. version
+4. machine
+5. nodename - gives the name that is given to the server node. 
 
  
