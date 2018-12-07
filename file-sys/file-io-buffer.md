@@ -58,4 +58,15 @@ specifing the O_SYNC flag at the time of file opening will cause all writes to t
 
 O_SYNC flag is an expensive proposition as the writes become very slow as each write has to ensure that the buffer is written to the disk. Therefore a better approach is not to use O_SYNC flag and using the fsync() methods judiciously. 
 
+## Summary of i/o buffering 
+
+The following diagram shows how the i/o buffering works. If we follow the diagram in the middle it shows where the data travels before it is stored. 
+1. The first place the data comes is the stdio libray. 
+2. this is followed the data being in the buffer cache for stdio 
+3. Once the buffer cache is read to be written the data passes to the kernel memory 
+4. Once in the kernel the data moves to teh kernel cache before is it writen to disk when the kernel initiates a write. 
+
+The diagram also shows how the different methods discussed earlier effect the movement of data through the stack. 
+![i-oflow](images/ioflow.png)
+
 
