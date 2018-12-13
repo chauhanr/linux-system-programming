@@ -49,4 +49,37 @@ From the diagram above we have the following blocks on each parition:
 * i-node table - inode table is the place where information of all the files and directory in the system are stored. the inode table is also sometimes called the i-list. 
 * data blocks - this is where the raw files and directory data lies. the structure of ext2 is a little different because on ext2 super, inode table and data blocks are all part of a block group which is made to reduce seek times. 
 
+## inodes 
+On a Linux file system each file is denoted by a data structure called inode at the kernel level this data structure has the following information that it keeps: 
+* file type (directory, regular files, fifo, character device or symbolic link) 
+* Owner of the file (UID) 
+* Group that the file belongs too (GID) 
+* Access permissions for the three categories of user, group and others. 
+* 3 time stamps about the files: 
+	* last access time. 
+	* last time the file was modified
+	* time of the last status change. 
+* Number of hard links to the file. 
+* Size of the file in bytes 
+* Number of blocks allocated to the file measured in units of 512 byte size. 
+* Pointers to the data block. 
 
+### inodes and data pointers on the ext2 system. 
+Every file in Linux file system keeps track of the data blocks that are assigned to the file by keeping a list of pointers to the data blocks that are assgined to the file. 
+It is important to note the that data on the files are never stored in contiguous memory locations as it is highly inefficient to do so in practice. Therefore blocks of data are assigned in incontiguous memory locations (buddy algorithm for assignment is used). This may lead to fragmentation of memory on the disk but this is very efficient in space usage. 
+
+![ext2-fs-inode](images/inode-struct.png)
+
+As you can see in the diagram above there are 15 pointers that the inode keeps for holding the pointers to the blocks of data. The first 12 pointers on the structure are directly to the first 12 blocks of the file. the 13th location on the inode data block poitns is a pointer to another set of pointers to data blocks that makes for the first level of indirection. The number of data blocks that the file system uses determines the number of datablocks that the 13th position can save e.g. if block size of ext2 is 1024 then the 13th position pointer can hold upto 256 blocks of memory and 1024 blocks in the case the size is 4096 bytes. 
+
+If the file is still larger for the pointers in the 13th position then the 14th position pointers has even more locations to store the data as it is a double indirection pointers meaning it holds a pointer to pointer of blocks that hold pointers to the actual data block. If we still have a larger file on the system then the 15th location is used which is a 3 level of indirection. 
+
+In a sense if the block size on the file system is 4096 then the largest file that ext2 system an hold is 4 Tera bytes. 
+
+
+## Virtual File System (VFS) 
+As the Linux operating system has been built to support multiple file sytems. To do this Linux has built a Virtual File system (VFS) interface which it enforces on to each file system that needs to work with Linux. Therefore the device drivers that actually interact with the file system at a lower level build primitives that the VFS exposes to applications that run on the Linux OS. There are several operations that the VFS supports that the file system device driver needs to support as well e.g. write(), read(), truncate(), mount(), unmount(), mmap(), link(), unlink(), symlink(), rename(), lseek(), close() etc. 
+
+However not all file system support all these operations e.g. on Microsoft's VFAT file system there is no support to create symbolic links therefore the symlink() call to the device driver of VFAT system on Linux returns an error. 
+
+![vfs](images/vfs-support.png)
