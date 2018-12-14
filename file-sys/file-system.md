@@ -83,3 +83,49 @@ As the Linux operating system has been built to support multiple file sytems. To
 However not all file system support all these operations e.g. on Microsoft's VFAT file system there is no support to create symbolic links therefore the symlink() call to the device driver of VFAT system on Linux returns an error. 
 
 ![vfs](images/vfs-support.png)
+
+
+## Journalling File Systems
+In traditional FS like the ext2 a lot of data about the files are kept in the Kernel data structures before it is flushed to disk. Due to this design these file systems (including ext2) are vulnerable to system crashes after which a consistency check needs to be performed. This check looks for file meta data incosistency and not for data that may have been lost. 
+
+Journalling FS are step towards achieving file meta data consistency which can survive system crashes and this is done using journalling that writes the state of file to disk and there is no need to run consistency checks when the system crashes. There are a number of journalling file system that can be used: 
+* ext3/ext4 - these are journaling file systems that have a lot of features the ext4 has some features like feature to allow contiguous memory to prevent disk fragmentation, online FS defragmentation, faster file system checking and support for nano second timestamps. 
+* Btrfs (butter fs or B-tree FS) features like extents that ext4 gives, checksums on data and metadata online file system checking. space efficient packing of small files, space indexed directories. 
+
+There are other file systems with the journalling capabilities like XFS and JFS. 
+
+
+## Single Directory Hierarchy and Mount points 
+On Linux as well as Unix all filesystems reside under a single directory tree. At the base of the tree is the root directory, /(slash). Other file systems are mountes on top of the root directory. The command to mount is given below 
+
+```
+$ mount device directory 
+``` 
+
+With newer linux versions kernel supports mounting file systems per process basis using the mount namespace construct. This means that each process can have its own set of file system mount points, this leads to a different file system for each process (potentially). 
+
+The diagram give a representation on how the file systems can look: 
+
+![mount-points](images/mount-points.png) 
+
+
+## Mounting and Unmounting File systems 
+There is a command each for mounting and unmounting a file system namely mount and unmount. There are a few file s we need to consider before we look at the details of these commands. 
+
+1. **/proc/mounts** - this file is used to hold the mounted file system information on Linux. With the advent of containers and file system mounts per process the mounts that a process sees can be seen in /proc/${PID}/mounts. 
+2. **/etc/mtab** - this is similar to the /proc/mounts file but it has bit more information. It does not have upto the min details as it waits for system processes to update it. 
+3. **/etc/fstab**  - this file also has infromation about the file system but this file is updated by the system admin only to do admin and management related work to the file systems. 
+
+All the 3 files above have the same format and that is: 
+
+```
+/dev/sda9 /boot ext3 rw 0 0 
+```
+There are 6 fieds that these files contain and here is what each means: 
+
+1. name of the mount device used to mount the FS.
+2. the mount point for the device 
+3. file system type 
+4. mount flags; in the above example rw indicates that the file system was mounted read write. 
+5. A number used to control the operation of the file system like backups by dump command. this field and the next are only used in /etc/fstab and are 0 for other two files. 
+6. A number used to control the order in which the fschk (file system check command), run to check the fs integrity after a chrash of OS, is run on the all the file systems in the operating system. 
