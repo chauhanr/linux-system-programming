@@ -251,7 +251,7 @@ The example where you would like to use a bind is creation of chroot jail. Rathe
 ## Recursive bind mounts 
 By default, if we create a bind mount for a directory using MS_BIND, then only that directory is mounted at the new location: if there are any submounts under the source directory, they are not replicated under the mount target. There is a MS_REC flag which can be ORed with MS_BIND as part of the flags argument to mount(). 
 
-### Virtual File System - tmpfs 
+## Virtual File System - tmpfs 
 there are various memory based file systems that have been developed for the Linux system and most popular one is the tmpfs. The tmpfs uses just the RAM and the swap space to do the work. 
 
 ```
