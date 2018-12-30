@@ -129,3 +129,138 @@ There are 6 fieds that these files contain and here is what each means:
 4. mount flags; in the above example rw indicates that the file system was mounted read write. 
 5. A number used to control the operation of the file system like backups by dump command. this field and the next are only used in /etc/fstab and are 0 for other two files. 
 6. A number used to control the order in which the fschk (file system check command), run to check the fs integrity after a chrash of OS, is run on the all the file systems in the operating system. 
+
+
+### Mounting a file system 
+The command that loads the file system uses the mount() system call. 
+
+```
+int mount(const char *source, const char *target, const char *fstype, unsigned long mountflags, const void *data)
+```
+
+the mount command will mount the file system contained under the device specified by the source under the directory target.
+* fstype - specifies the file system that we are intending to mount e.g. ext2, ext4 etc. 
+* mountflags - is bit mask constructed by OR-ing zero or more of the flags options 
+* data - this is the pointer to buffer information that the file system can interpret. 
+
+The mount flags can help remount or move a file system from one place to another as well as make some mount points read only. 
+
+### Unmounting a file system 
+The unmount command will remove the mounted filesystem. The unmount() system command is very simple as we just specify the target folder that needs to be unmounted. However the unmount command will not work until the file system is not idel. Therefore if any file is still open then the unmount command will result is an EBUSY error. 
+
+The unmount2() system call on the other hand give more flags that can be specified allowing more fine grained control of the unmount2 command. 
+
+```
+int unmount2(const char *target, int flags); 
+
+```
+The flag options are: 
+* MNT_DETACH - this performs a lazy detach. The mount point is marked so that no process can make access to it, however processes that are already using the FS can keeping doing so. 
+* MNT_EXPIRE - this flag will mark a mount point as expired. The mount point remains expired as long as no other processes uses it. A second unmount2() call with the MNT_EXPIRED flag will unmount the expired file system. 
+* MNT_FORCE - Force an unmount even if the file system is busy. 
+
+
+## Advanced Mount features 
+
+### Mounting a file system at multiple mount points 
+Kernel 2.4 and above allows for a device to be mounted to multiple locations within a file system. Changes made via one mount point will be visible on others. Due this this feature the unmount() call does not take file system type as an input to unmount a fs. 
+
+### Stacking multiple mounts on the same mount point. 
+We can mount multiple fstype on a single mount point. Each new mount hides the directory subtree previously visible on the mount point. When the mount point at the top is unmounted the previously hidden mount becomes visible once more. 
+
+```
+# mount /dev/sda12 /testfs     - Create the first file system on /testfs 
+# touch /testfs/myfile 
+# mount /dev/sda13 /testfs     - stack a second fs on the /testfs 
+# mount | grep testfs          - verify the setup 
+/dev/sda12 on /testfs type ext3 (rw) 
+/dev/sda13 on /testfs type reiserfs (rw) 
+# touch /testfs/newfile 
+# ls /testfs                   - view the file under the /testfs folder. 
+newfile 
+# unmount /testfs 
+# mount | grep testfs
+/dev/sda12 on /testfs type ext3 (rw) 
+# ls /testfs 
+lost+found myfile                          - shows the first file created. 
+```
+
+the stacking of mounts over a mount point helps with the creation of containers and is essential piece of technology like Docker. 
+
+The stacking of mounts on a mount point with MNT_DETACH option to unmount can provide smooth migration off file system without needing to take system into a single user mode. 
+
+### Mount Flags that are per-mount options 
+Kernel 2.4 and above allow for mount flags to be kept on a per mount basis. 
+
+```
+# mount /dev/sda12 /testfs 
+# mount -o noexec /dev/sda12 /demo 
+# cat /proc/mounts | grep sda12 
+/dev/sda12 on /testfs ext3 rw 0 0 
+/dev/sda12 on /demo  ext3 rw,noexec 0 0 
+# cp /bin/echo /testfs 
+# /testfs/echo "art is something that is well done"
+art is something that is well done
+#/demo/echo "hello"
+bash: /demo/echo: Permission denied 
+```
+
+### Bind Mounts
+a bind mount allows a file or directory to be mounted at the same location in the file system hierarchy. This allows for the file to be visible from both locations. This is like a hard link but differs in 2 ways: 
+* A bind mount can cross file system mount points (and even chroot jails) 
+* It is possible to make a bind mount for a directory. 
+
+```
+# pwd 
+/testfs 
+# mkdir d1 
+# touch d1/x 
+# mkdir d2 
+# mount --bind d1 d2 
+# ls d2
+x
+# touch d2/y
+# ls d1
+x y 
+``` 
+
+Lets have a look at that file example 
+
+``` 
+# cat > f1             - create a file to be bound to another location 
+Chance is always powerful. Let your hook be always cast 
+ctnl+D
+# touch f2 
+# mount --bind f1 f2  - bind f1 as f2
+# mount | egrep '(d1|f1)'
+/testfs/d1 on /testfs/d2 type none (rw, bind) 
+/testfs/f1 on /testfs/f2 type none (rw, bind) 
+# cat >> f2
+In the pool where you least expect it, will be a fish. 
+# cat f1               - this will have two lines 
+Chance is always powerful. Let your hook be always cast 
+In the pool where you least expect it, will be a fish. 
+# rm f2                - cannot be done as it is bind mount. 
+rm: cannot unlink 'f2': device or resource busy. 
+# unmount f2           - unmount 
+# rm f2                - now we can remove f2.
+```
+
+The example where you would like to use a bind is creation of chroot jail. Rather than replicating various standard directories (such as /lib) in the jail, we can simply create bind mounts for these directories (possibly mounted read-only) within jail. 
+
+## Recursive bind mounts 
+By default, if we create a bind mount for a directory using MS_BIND, then only that directory is mounted at the new location: if there are any submounts under the source directory, they are not replicated under the mount target. There is a MS_REC flag which can be ORed with MS_BIND as part of the flags argument to mount(). 
+
+### Virtual File System - tmpfs 
+there are various memory based file systems that have been developed for the Linux system and most popular one is the tmpfs. The tmpfs uses just the RAM and the swap space to do the work. 
+
+```
+# mount -t tmpfs source target 
+```
+source is just for the purpose of listing on the mount command and on the /proc/mounts file. By default the tmpfs can grow upto half of the RAM size but we can specify the size in bytes. As soon as the tmpfs is unmounted all the data on the file system is lost. 
+
+tmpfs is used by the Linux Kernel in the following cases: 
+* An invisible tmpfs is used for implementing System V shared memory and shared anonymous memory mappings. 
+* A tmpfs file system mounted at /dev/shm is used for glibc implementation of POSIX shared memory and POSIX semaphores. 
+
+
