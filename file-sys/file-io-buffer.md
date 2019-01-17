@@ -67,6 +67,6 @@ The following diagram shows how the i/o buffering works. If we follow the diagra
 4. Once in the kernel the data moves to teh kernel cache before is it writen to disk when the kernel initiates a write. 
 
 The diagram also shows how the different methods discussed earlier effect the movement of data through the stack. 
-![i-oflow](images/ioflow.png)
+![i-oflow](images/io-flow.png)
 
 
