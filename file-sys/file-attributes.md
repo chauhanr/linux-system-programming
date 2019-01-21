@@ -51,6 +51,56 @@ second precision.
 
 
 ## File Ownership
+When a file us created it needs to be set to have an owner and group that it belongs too. These are
+specified by the files user and group id. However files user id and groups can be changed. The
+commands that do this are: 
+
+* chown - this takes the path of the file in questions and changes the user and group to the one
+  specified. 
+* lchown - this takes input as the link to the file and changes the ownership and group 
+* fchown - this too changes ownership and group of a file but takes a file descriptor as input 
+
+_only a previledged user can use the chown commands to change the user id of the file. An
+unpreviledged process can just change the group of the file from its group to a group that it is a
+part of only_ 
 
 
+## File Permission 
+One the file stat structure the st_mode field is made of 15 bits and the last 12 is what we call the
+file permission bits. The following table respresents the constants of permission 
+
+| Constants | Octal values | Permission bits | 
+| ----------|:------------:| ----------------|
+| S_ISUID   | 04000        | Set-user-ID     | 
+| S_ISGID   | 02000        | Set-group-ID    | 
+| S_ISVTX   | 01000        | Sticky          | 
+| ----------| -------------| ----------------| 
+| S_IRUSR   | 0400         | User-read       | 
+| S_IWUSR   | 0200         | User-Write      | 
+| S_IXUSR   | 0100         | User-execute    | 
+| ----------| -------------| ----------------| 
+| S_IRGRP   | 040          | Group-read      |
+| S_IWGRP   | 020          | Group-write     | 
+| S_IXGRP   | 010          | Group-execute   | 
+| ----------| -------------| ----------------| 
+| S_IROTH   | 04           | Other-read      | 
+| S_IWOTH   | 02           | Other-write     | 
+| S_IXWOTH  | 01           | Other-execute   | 
+| ----------| -------------| ----------------| 
+
+#### Permission on Directories 
+The read, write and execute permissions on the directory are interpreted a little differently. 
+* read - the contents of the directories (file and other dir) can be listed using the ls command. 
+* write - the permission allows for the files in the directory to be created or removed. 
+* execute - file within the directory may be accessed. execute permission is sometimes called search
+  permission also. 
+
+Some other points to remember: 
+* when accessing a file execute permission is required at all level of the path. so to list /home/mtk/x
+  we need read permission on home and mkt. 
+* read permission allows only the file to be listed using the ls command but if the execute
+  permission is not set then the file inode will not be accessible. 
+* if the execute permission is set but read is not then we can access the file using the entire path but will not be able
+  to list is using ls command. 
+* to add and remove files in a directory we need execute and write permissions both.
 
