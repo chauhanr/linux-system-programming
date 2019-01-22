@@ -104,3 +104,31 @@ Some other points to remember:
   to list is using ls command. 
 * to add and remove files in a directory we need execute and write permissions both.
 
+
+#### set-user-ID, set-group-ID, sticky bit 
+The set user id and set group id bits are used to create previledged programs. set-group-id also
+helps in controlling group ownership of new files and enable mandatory locking of file. 
+
+The sticky bit has some historical significance. During the earlier versions of UNIX for system
+files that were run frequently this sticky flags were set for file to be kept in swap space so that
+the file could be loaded faster in consequent uses (this use is now obsolete as the memory
+management has become better. 
+
+The sticky bit is still used but it uses is more on the directory. When this bit is set on the
+directory it stands for restrictive deletion where an unpreviledged user can only modify the file
+that he/she has access to or has created. This is a setting that has been done on the tmp folder in
+Linux. 
+
+The sticky bit can be set using the chmod command i.e.  chmod +t.
+
+#### Process file mode creation mask (umask) 
+When a new file or directory is created the premissions are carried from the mode that is passed to
+the command or the premission the process has based on the shell or process that spawns it. This
+however is changed is the file creation mode called umask is set. 
+The umask defines the permission bit that must be switched off when the files or directories are
+craeted by the process. The umask is a process level attribute. 
+
+so for example of the umask is set at 022 (----w--w-) will mask the permission on the file to ensure
+that the group and other users do not have write permissions. 
+
+
