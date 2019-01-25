@@ -132,3 +132,24 @@ so for example of the umask is set at 022 (----w--w-) will mask the permission o
 that the group and other users do not have write permissions. 
 
 
+## I-node flags (ext2 file system) 
+inode flags are non standard linux features and sometimes referred to as a extended file attributes.
+Commands from the shell that give the inode flags is lsattr where as the flags can be changed using
+the chattr. From code the ioctl() method can be used. 
+
+The flags that are aviable are: 
+
+| Constant   | chattr| Purpose | 
+|------------|:-----:|---------|
+|FS_APPEND_FL| a     | append only (previledge required) |
+|FS_COMPR_FL | c     | Enable file compression | 
+|FS_DIRSYNC_FL| D | sync directory updates | 
+| FS_IMMUTABLE_FL| i | immutable (previledge required) | 
+|FS_JOURNAL_DATA_FL| j | Enable data journaling | 
+|FS_NOATIME_FL| A | don't update files last access | 
+|FS_NODUMP_FL| d | No Dump | 
+|FS_SYNC_FL| S | Synchronous file updates| 
+|FS_NOTAIL | t | No tail packing | 
+|FS_UNRM_FL | u | file can be undeleted | 
+
+
