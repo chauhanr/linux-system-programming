@@ -13,7 +13,7 @@ All the 3 system calls above return a stat structure that returns the following 
 * **file ownership** - the user and group id that the file belongs too. 
 * **Link Count** - the number of hard links that are created and point to the file. 
 * **file type and permission** - the st_mode attribute holds both the file type and file
-  permissions. the file types can be either of
+  permissions. the file types can be either:
   	* regular 
 	* directory 
 	* character device 
@@ -31,11 +31,11 @@ All the 3 system calls above return a stat structure that returns the following 
 
 ## File Timestamps 
 based on the command that run on a file there various time stamps can be changed. e.g. 
-	* mkdir - changes access, modification and status change times for a file 
-	* mkfifo - also has the same changes as a mkdir 
-	* open, close()- same as the earlier two.
-	* read() - system call will only change the access time. 
-	* removeattr - will only change the status time and not the access or modification times. 
+* mkdir - changes access, modification and status change times for a file 
+* mkfifo - also has the same changes as a mkdir 
+* open, close()- same as the earlier two.
+* read() - system call will only change the access time. 
+* removeattr - will only change the status time and not the access or modification times. 
 
 #### Change file timestamps using utime() and utimes()
 the last access and modification time stamps can be changed using the _utime()_ or _utimes()_ the
@@ -152,4 +152,29 @@ The flags that are aviable are:
 |FS_NOTAIL | t | No tail packing | 
 |FS_UNRM_FL | u | file can be undeleted | 
 
+## Extended Attributes 
+This feature in Linux allows arbitrary metadata to be stored in a file inode in the form of key
+value pairs. 
 
+```
+  $ touch tfile 
+  $ setfattr -n user.x -v "the past is not dead" tfile 
+  $ setfattr -n user.y -v "In fact, its not even the present" tfile 
+  $ getattr -n user.x tfile 
+  # file: tfile 
+  user.x = 'the past is not dead'
+  $ getattr -d tfile       # this dumps all of the meta data attributes to the screen 
+  # file: tfile 
+  user.x = 'the past is not dead'
+  user.y = 'In fact, its not even the present'
+
+```
+Extended attributes are only applied to regular files and directories. symbolic links, FIFO, sockets
+are files can be done but is not recommended. 
+
+#### VFS restrictions 
+* the length of the EA name cannot be more than 255 
+* the EA value cannot be greater than 64kB 
+* on ext2, ext3, and ext4 the total bytes used by names and values of all EAs on a file is limited
+  to the size of the single logical disk block. 
+* on JFS there is an upper limit of 128 
