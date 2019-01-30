@@ -51,4 +51,40 @@ The algorithm works in the following steps:
 	* other wise the access is denied. 
 5. Otherwise the process is granted permissions speficied in the ACL_OTHER entry.
 
+## ACL_MASK significance 
+When we have to ACL user and group entries and would like to handle the permissions of both a ACL
+aware and unaware application without effecting the ACL user and group definitions the ACL_MASK is
+invaluable. 
+* All changes to traditional group permissions via chmod change the settings of the ACL_MASK entry
+  and not the ACL_GROUP_OBJ entry. 
+* a call to the stat() function will return ACL_MASK permissions instead of the ACL_GROUP_OBJ
+  permissions. 
+
+As mentione earlier ACL_MASK is applied to the user and group permissions afterwards thereby
+restricting the permissions specified by the user and group permissions. 
+
+## Default ACL 
+default ACL are different from access ACLs because the default ACL are firstly not used for
+determining access permissions from a process but these are applied to directories. The default ACL
+comes into the picture when a file is created within a directory or sub directory. 
+
+The default ACL are kept in the system.posix_acl_default file. and they can be set or gotten using
+the setfacl and getfacl methods respectively using the -d option. 
+
+```
+$ setfacl -d -m u::rwx,u:paulh:rx,g::rx,g:teach:rwx,o::- sub
+$ getfacl -d --omit-header sub
+user::rwx
+user:paulh:r-x
+group::r-x
+group:teach:rwx
+mask::rwx
+other::---
+```
+the ACL_MASK entry is added automatically using the setfacl command.
+
+* A new subdirectory created within a directory inherits the default ACL from the parent directory. 
+* A new file or sub directory inherits the directories default ACL as its access ACL 
+
+
 
