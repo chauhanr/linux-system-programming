@@ -65,5 +65,27 @@ When it comes to file permissions that soft links permissions are not important.
 permission on the dereferenced file determines the access. However the soft links access is used in
 the case where the link itself needs to be deleted. 
 
+## Create and remove hard links 
+the link() and unlink() system calls help deal with adding and removing hard links. The link() call
+will create a hard link between the old path and the new path specified. if new path exists then an
+error is thrown. 
+
+link call does not dereference a symbolic link so if the old path is specified as a symbolic link
+then the link() call will create a hard link to the symbolic link and not to the file that the link
+points to. 
+
+The unlink() call will remove a link (deletes a filename) and if that is the last link to the file,
+also removes the file itself. unlink cannot be used to remove directories though. 
+unlink command does not deference symbolic links it just removes the symbolic link rather than the
+file/directory that the link points too. 
+
+**An open file is only deleted when all file descriptors are closed.**
+In addition to counting the links to each inode the kernel also counts the number of open file
+descriptors to the file. If all links a file are removed (unlinked) the file is not deleted or
+closed until all the file descriptors are also closed. 
+Therefore the tempfile() feature in Linux does exactly this where a file descriptor to a temp file
+is opened and the link is deleted which means that once the program dealing with the team file exits
+or closes the file descriptor the temp file automatically gets deleted. 
+
 
 
