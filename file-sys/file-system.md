@@ -263,4 +263,4 @@ tmpfs is used by the Linux Kernel in the following cases:
 * An invisible tmpfs is used for implementing System V shared memory and shared anonymous memory mappings. 
 * A tmpfs file system mounted at /dev/shm is used for glibc implementation of POSIX shared memory and POSIX semaphores. 
 
-
+[Next](file-attributes.md)
