@@ -88,4 +88,22 @@ is opened and the link is deleted which means that once the program dealing with
 or closes the file descriptor the temp file automatically gets deleted. 
 
 
+## Reading Directories 
+there are 2 main functions that allow a program to read a directory opendir and readdir 
+
+* **opendir()** - this method takes a path of the directory as an input and returns a NULL in case of an error and a DIR structure in the case of a success. DIR structure is also called the directory stream. This stream is a handler that are passed to the other functions that handle directories. Upon successful return from the opendir() directory stream is placed at the first entry in the dir list. 
+
+* **readdir()** - this method help programs read directories and it takes 
+	* DIR (directory stream) as an input 
+	* returns a dirent structure that gives the details on the file that can be read next. 
+once the dirent gives use the file/directory name we can us the stat command to the get the file type. 
+
+If some files or directories are created during the time that the dir was being read they will not show up when rusing the readdir method. In order to get the latest changes we can use the following method 
+
+* **rewinddir()** this moves the DIR stream back to the begining and we can restart the traversal and get all the other files that have been added. 
+
+* **closedir()** will close the directory stream and release all the resources that have been opened by the opendir() system call. 
+
+* **fdopenddir()** - if you have a file descriptor of the directory and you want to use that to open the file then the fdopenddir() method helps. Due to this method there are some race conditions we can avoid. 
+
 
