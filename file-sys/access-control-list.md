@@ -87,4 +87,6 @@ the ACL_MASK entry is added automatically using the setfacl command.
 * A new file or sub directory inherits the directories default ACL as its access ACL 
 
 
+[Next](directory-links.md)
+
 
