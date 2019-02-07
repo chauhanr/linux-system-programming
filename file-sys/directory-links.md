@@ -107,3 +107,47 @@ If some files or directories are created during the time that the dir was being 
 * **fdopenddir()** - if you have a file descriptor of the directory and you want to use that to open the file then the fdopenddir() method helps. Due to this method there are some race conditions we can avoid. 
 
 
+## Changing the Root Directory of a process | *chroot*
+By default the root directory for a process is always (/) because all processes inherit their root
+directory from their parents. However there are use cases that give us a reason to set a new root
+directory to a folder structure within the file system. The chroot command and method helps do this: 
+
+```
+   int chroot(const char *pathname);   // returns 0 on success and -1 on error 
+```
+
+When this system call is made the process root directory is set to the pathname that is sent over in
+the call (if the path is a symlink then it is deferenced). This is sometimes referred to as the
+setting of a chroot jail, because we are restricting the process only to operate or see the file
+system within only a subsection of the entire file system. 
+
+Some use cases: 
+1. When a user logs into the the Linux system using the FTP anonymous login. In this case the system
+   needs to restrict the user to only a specific file system under the universal root. Generally the
+   users under such chroot jails will not run programs and it is prevented by default as the shared
+   libraries that are linked to the shared libraries are generaly outside the chroot jail. In order
+   to make the libraries accessible we can use the bind mount setting to link folders such as
+   /usr/lib or /lib.
+2. Another use case is the creation of containers in Linux 
+
+There are a lot of scenarios that make it important set the chroot jail properly: 
+* chroot execution does not change the current working directory of the process. If the chroot
+  command is not followed by a chdir command then the process will have the rights to access other
+  files outside the jail. 
+* if a process holds a file descriptor of folder outside the jail before chroot is called. then the
+  process can use the fchdir() - which uses the fd as the means of change directory to where ever we
+  wish. 
+
+  ```
+     int fd 
+     fd = open("/", O_RONLY); 
+     chroot("/home/mnk"); 
+     fchdir(fd) 
+     chroot(".")    /* breaks out of the jail which was set as /home/mnk */
+  ```
+
+* If another process gives the jailed process a Linux socket instance the fchdir command can then
+  use fchdir command to break the jail too. 
+
+
+
