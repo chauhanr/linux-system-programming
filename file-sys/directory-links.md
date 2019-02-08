@@ -104,6 +104,3 @@ If some files or directories are created during the time that the dir was being 
 
 * **closedir()** will close the directory stream and release all the resources that have been opened by the opendir() system call. 
 
-* **fdopenddir()** - if you have a file descriptor of the directory and you want to use that to open the file then the fdopenddir() method helps. Due to this method there are some race conditions we can avoid. 
-
-
