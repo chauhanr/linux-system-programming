@@ -155,6 +155,68 @@ int sigmember(const sigset_t * s, int sig); // checks if the sig is a member of 
 ```
 There are other methods too that perform set operations on the sigset_t like the sigandset() and sigorset() 
 
+## Signal Mask (blocking signal delivery)
+The kernel keeps a signal mask (set of signals) whose delivery is currently blocked. If a signal that is blocked is sent to the process, the delivery to the process is delayed until it is unblocked by being removed from the process signal mask. (signal mask is actually a per thread attribute that can be set pthread_sigmask() method) 
+A signal is added to the mask when: 
+* When the signal handler is invoked, the signal that caused the invocation is added to the signal mask. 
+* When the signal handler is established with sigaction() there is a provision to block not only the signal that caused it but also another set of signals. 
+* sigprocmark() system call can be used at anytime to explicitly add signals to, remove signals from, the signal mask. 
 
+```
+int sigprocmark(int how, const sigset_t *set, sigset_t *oldset); 
+                           Return 0 on success or -1 on error 
+```
 
+* how - determines the changes that sigprocmark() makes to the signal mask: 
+	* SIG_BLOCK - this will add the signals in the set to the oldset (by way of union) and block all of them. 
+	* SIG_UNBLOCK - signals pointed to in the set are removed from the oldset. This will unblock them, unblocking a system that is not currently blocked will not cause any error. 
+	* SIG_SETMASK - signal set pointed to by the set is assigned to the signal mask. 
+
+* if the set is sent in as NULL then sigprocmark() will return just the set of signals that are blocked and how will be ignored. 
+
+However remember the signal that are unblockable i.e. SIGKILL or SIGSTOP are silently ignored. The following code shows how the sigprocmark works 
+
+```
+sigset_t blockSet, prevMask; 
+
+// initialize a signal set to contain SIGINT 
+signalempty(&blockSet); 
+sigaddset(&blockSet, SIGINT); 
+
+// block the SIGINT 
+if (sigprocmark(SIG_BLOCK, &blockSet, &prevMark) == -1) 
+	errExit("signprocmark1")
+// code that should not be interrupted by SIGINT 
+
+// restore previous signal mask, unblock SIGINT
+if (sigprocmark(SIG_SETMASK, &prevMask, NULL) == -1) 
+	errExit("sigprocmark2"); 
+
+```
+
+## Pending Signals 
+If a signal is delivered to a process in between the time that the signal mask is set to block the signal, the signal is kept in pending state. Once the signal is unblocked it is delivered to the process. To determine the signals pending for a process, we call sigpending() 
+
+```
+int sigpending(sigset_t *set); 
+	returns 0 on success and -1 on error 
+```
+
+**Signals are not Queued** The pending signals is a set, it only tells us whether it has occured or not but not the times that is has occured. Therefore the signal may have occured multiple times but is delivered just once when the signal is unblocked later. However runtime sgnals are queued. 
+
+## Changing the disposition of the signal - sigaction() 
+There is a signal() method that can be used to change the disposition but portability of the method is not very good so the sigaction is ued. 
+
+```
+int sigaction(int sig, const struct sigaction *act, struct sigaction *oldset); 
+
+// sigaction struct is as follows: 
+struct sigaction{
+   void (*sa_handler)(int);  // address of handler 
+   sigset_t sa_mask;  // signals blocked during invocation.  
+   int sa_flags;      // flags controlling handler invocation. 
+   void (*sa_restore)(void) 
+}
+
+```
 
