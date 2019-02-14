@@ -85,3 +85,37 @@ int sigaltstack(const stack_t *sigstack, stack_t *old_stack);
 ```
 
 Kernel generally does not resize the alternate stack and if that too overflows then there are unintended consequences like writing of signal data to  memory locations that are assigned to other variables. 
+
+## Interruption and Restarting a system call 
+Lets discuss a very specific scenario: 
+
+1. We establish a signal handler for some signal
+2. we make a blocking system call next e.g. a read() waits for an input from the terminal device 
+3. While the system is waiting on the blocking system call the signal for which we defined a signal handler occurs and the signal handler of this call returns. 
+What happens next? - by default the system call fails with an error EINTR "interrupted function" but you can write code that will allow you to resume the early blocking system call too. 
+
+```
+while ((cnt = read(fd, buf, BUF_SIZE)) == -1 && errno == EINTR) 
+	continue;  
+
+if (cnt == -1)
+  errExit("read"); 
+
+```
+to write this code is inconvinent each time we have handle for a blocking system call. There is a flag SA_RESTART is a per-signal setting which if set will allow the blocking system call to resume where as for all other signal EINTR is issued. 
+We can use the siginterrupt() method to set the SA_RESTART flag 
+
+```
+int siginterrupt(int sig, int flag); 
+		// return 0 on success and -1 on failure. 
+		// if the flag value is 0 then for the signal all blocking system calls will be resumed or restarted. 
+		// if the flag is set to value 1 then the signal will not restart the blocking syscalls.  
+```
+
+**Unhandled stop signals can casue EINTR in blocking system calls** 
+On some blocking system calls we can get a EINTR even when the signal handlers are not defined. This happens when a Stop signal is issued (SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU) etc. and then resumed by a SIGCONT signal. 
+This suggests that for all syscall like epoll_wait(), read(), semop() etc. we may need to right method to handle the resumption of the syscall. 
+
+
+
+
