@@ -49,4 +49,39 @@ int main(int argc, char *argv[]){
 
 ```
 
+**Standard Async Signal safe functions** 
+A function is set to be async signal safe because it is either reenterant or it is not interrutable by signal handlers. There are a number of functions with is properly like chdir, rmdir, fork, and many many more. Therefore signal handlers should either be reenterant or they must call only async signal safe methods. 
+Most of the string manipulations or functions that interact with stdio or stdout are not async signal save functions. 
 
+**Global variables and sig_atomic_t type** 
+Global variables in the C programs can be used by signals to indicate the change in state. But for them to work properly the data type of the global variable needs to be such that the operations on them must be atomic. Therefore for the purposes of an integer we use the sig_atomic_t type to ensure that the integer is atomic when the signal handler or the main program is chaning it simultaneously. 
+
+## Methods to terminate the Signal handlers 
+Simply returning from the signal handler is not always helpful or recommended specially in the case of hardware interrupts. therefore there are several ways of doing this: 
+1. use the _ exit() method to get out of the handler which is different from the exit() method used in C language to get out of a program. The exit() method call will ensure that the stdio buffers are flushed before calling the exit() which may not be desireable in the case of signal handlers. 
+2. use kill() or the raise() to send signal that kill the process 
+3. perform a non local go to from the signal handlers. 
+4. use the abort() function to terminate the process with a core dump. 
+
+**Performing the non local jump from signal handlers** 
+when a process is running on a shell and we press Control+C the SIGINT signal is emitted and the process uses a longjmp() is called to move from th process to the shell to receive the next command. 
+However this is not a good approach because then the signal is issued and the proces responds to it to call the signal handler a signal mask is added to the process for the signal just received. longjump() method although is able to help us get out of the process back to the caller does not reset the process signal mask and this behavior is not consistent because in a BSD system the signal is reset where as in System V this may not be the case. therefore the longjmp() is not portable approach. 
+
+To solve this there are a couple sigsetjmp() and siglongjmp() that make the pbehavior we described above portable.
+
+**Using the abort() function** 
+If the abort() method is called from a program a SIGABRT signal is issued and is guaranteed to terminate the process except in the case where a signal handler is specified and it ends without returning from the handler (non local go to method). 
+In all other cases the abort() will end the process even if it fails the first time abort() resets the signal from SIGABRT to SIG_DFL and raises a second abort(). The abort also flushes all the stdio streams. 
+
+## Handling a signal on an Alternate Stack: sigaltstack() 
+As signal handler is a function it is allocated a stack in heap memory for it to do its job. However if the process is already running high memory usage and it as the limit of the heap such that calling a signal handler stack overflows the stack the process will fail. Example is that of SIGSEV signal which is issued when the last function call just overflows the limit of the heap. Because the SIGSEGV does not have space to run the process terminates without handling of the signal. In order to handle this issue the following is done: 
+1. allocate a memory, called the alternate signal stack to be used for stack frames of signal handlers 
+2. use the sigaltstack() system call to inform the kernel of the existance of such a stack. 
+3. When establishing the signal handler, specify the SA_ONSTACK flag to inform the kernel that the stack for this signal handler must be on the alt stack that has been established. 
+
+```
+int sigaltstack(const stack_t *sigstack, stack_t *old_stack); 
+	       // this method not only creates a sigstack if one is not created but returns the old stack if one is present. 
+```
+
+Kernel generally does not resize the alternate stack and if that too overflows then there are unintended consequences like writing of signal data to  memory locations that are assigned to other variables. 
