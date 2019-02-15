@@ -25,6 +25,7 @@ Examples of such functions:
 static char *str2; 
 static int handled=0;
 
+![Next](./signals-advanced.md)
 static void handler(int sig) {
   crypt(str2, "xx")
   handled++
@@ -117,5 +118,5 @@ On some blocking system calls we can get a EINTR even when the signal handlers a
 This suggests that for all syscall like epoll_wait(), read(), semop() etc. we may need to right method to handle the resumption of the syscall. 
 
 
-
+[Next](signal-advanced.md) 
 
