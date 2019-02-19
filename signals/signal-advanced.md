@@ -64,3 +64,98 @@ In a process if multiple signals that are pending are unblocked they are all del
 as unblocked signals are awaiting delivery, if a switch between kernel and user mode is occurs during the execution of the signal handler, then the current signal handler is interrupted by the execution of the pendign signal. Diagram below shows how SIGINT and SIGQUIT signals which are delivered at the same time will be handled. 
 
 ![signal-deliver](images/signal-deliver.png) 
+
+## Realtime Signals 
+Realtime signals were introduced into Linux operating systems to overcome the limitations of the standard signals. the following are the features of realtime signals
+* Realtime signals have been introduced to increase the number of signals that can be used especially by the applications. There are 2 types of standard signals that can be used for defining application defined purpose. 
+* Realtime signals are queued and if a realtime signal occurs multiple times then it is delivered multiple times unlike the standard signal that are delivered only once irrespective of how many times they occur for a process. 
+* With realtime signals we can send data like integers or pointer values that the handlers can access. 
+* Order of delivery of the realtime signal is well defined and understood. If multiple realtime signals are pending then the ones with lower signal number are delivered first. If multiple signals of the same type are pending then they are delivered in the order in which they arrive. 
+
+**Limits on the number of queued realtime signals** 
+queuing signals to be delivered later requires kernel resources to maintain therefore there is a limit that is set for managing the limit. The unfortunate part is that this implementation is different based on the distribution or unix version. 
+* SUSv3 allows upper limit to be defined at 32 under the _ POSIX_SIGQUEUE_MAX 
+* On linux too before kernel 2.6.7 the real time signal queue was defined under /proc/sys/kernel/rtsig-max (default 1024) where as the number of current signals queued was avaiable at /proc/sys/kernel/rtsig-nr. However post 2.6.8 release We have a constant RLIMIT_SIGPENDING that defines the manx limit. 
+
+**Using realtime signals** 
+For the process to communicate usign real time signals the following needs to be done: 
+* the sending process sends the signal plus its accompanying data using the sigqueue() system call. SUSv3 allows for the realtime signals to be sent via kill() killpg() or raise() sys calls but how they will be handled is not consistent. 
+* The receiving process establishes a handler for the signal using a call to sigaction() that specifies the SA_SIGINFO flag. This allows the additional data to be passed to the signal handler registered. 
+
+#### Sending Realtime signals 
+the sigqueue() syscall is the way to do this task: 
+
+```
+#include <signal.h>
+int sigqueue(pid_t pid, int sig, const union sigval value) 
+			// returns 0 on success or -1 on failure 
+```
+
+* Similar to kill() sigqueue() can send null signals (signal 0) to do the samething that kill does. 
+* However the you cannot mention -1 under pid and hope that all the processes in the group are notified of the signal (this is the case under kill()) 
+
+The data that can be sent with the signal is a union that has the following structure 
+
+```
+union sigval{
+    int sival_int;    
+    int *sival_ptr;   // pointer to the signal data.
+}
+```
+#### Handling Realtime signals 
+We can handle the signals like we do standard signals i.e. registering a handler and setting the flag SA_SIGINFO 
+
+```
+struct sigaction act; 
+
+sigemptyset(&act.sa_mask); 
+act.sa_sigaction = handler; 
+act.sa_flags = SA_SIGINFO | SA_RESTART; 
+
+if(sigaction(SIGRTMIN + 5, &act, NULL) == -1) 
+	errExit("sigaction"); 
+```
+
+## Waiting for a Signal using a Mask : sigsuspend() 
+Sigsuspend() is designed to handle the following use case: 
+1. We temporarily block a signal so that the handler does not interrupt a critical section of the code. 
+2. We unblock the signal, and then suspend the execution of the program until the signal is delivered. 
+
+if we try to do this programatically the code so written leads to a situation of a deadlock where the program may miss a few signals. therefore to keep the above to operations atomic we have the sigsuspend()
+
+```
+
+int sigsuspend(const sigset_t *mask); 
+	// returns a -1 with errno set to EINTR
+
+# this is equivalent to the following code snippet. 
+sigprocmask(SIG_SETMASK, &mask, &prevMask);   // assign new mask 
+pause(); 
+sigprocmask(SIG_SETMASK, &prevMask, NULL);  // restore the old mask. 
+
+```
+
+## Synchronously waiting for a Signal 
+All the work tha the signal does so far has been async where the signal and the program execution act independently. However we may not require this in the case of many programs which may be ok with synchronous signals as well. The sigwaitinfo() is one such call. 
+
+```
+int sigwaitinfo(const sigset_t *set, siginfo_t *info); 
+	# returns number of delivered signal on success or -1 on error 
+```
+The system call will cause the program to wait synchronously for one of the signals mentioned in the set to occur. if the signal in the set are already pending on the signal queue the system call immediately returns. 
+The order in which the sigwaitinfo() call will pick up signals in the order going with signals with lower signal numbers first. 
+
+Another system call that is similar to sigwaitinfo() is the sigtimedwait
+```
+
+int sigtimedwait(const sigset_t * set, siginfo_t * info, const struct timespec * timeout); 
+              // returns the numebr of the signal delivered or -1 on error or time out. 
+```
+
+## Interprocess Communication with signals 
+Due to various limitation mentioned below the signals are not used as a meachnism for inter process communication
+1. due to the async nature of the signals in general problems like reentarant, deadlocks and correct signal handling cause quite a bit of issues however the sync signals do not have these issues but are considerably slow and block the process. 
+2. Standard signals are not queued and even the real time signals which have the queing capability only have a limited amount. Also delivery of the signals in case if queue has issues of signals being clubbed. 
+3. Signals hold only limited information that can be sent to the sender. 
+
+
