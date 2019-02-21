@@ -50,4 +50,11 @@ unsigned int alarm(unsigned int seconds)
 * In order to cancel all timers we can call alarm(0) 
 * After alarm() expires there is a SIGALRM signal that is emitted. 
 
+## Schedulig and Accuracy of Timers 
+Depending on system load and scheduling of processes, a process my not schduled to run until some short time after actual expiration of the timer. Interval timers are not subject to creeping errors. 
+Although the timeval structure supports time defintion upto the milli second precision, but the accuracy of the timer signal is dependent on the software clock. If the clock does not support the granularity of the time set then the timeval is rounded off to the next value. for example a timeval of 19100 micrseconds will genrally be rounded to 20000 ms. 
+
+**High resoultion timers** 
+Starting from Kernel 2.6.21 the dependency of the timer on the kernel jiffy has been removed. The timer can be as accurate as the time accuracy of the underlying hardware. 
+
 
