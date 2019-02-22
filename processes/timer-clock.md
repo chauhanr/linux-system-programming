@@ -57,4 +57,57 @@ Although the timeval structure supports time defintion upto the milli second pre
 **High resoultion timers** 
 Starting from Kernel 2.6.21 the dependency of the timer on the kernel jiffy has been removed. The timer can be as accurate as the time accuracy of the underlying hardware. 
 
+## Setting Timeouts on Blocking Operations 
+In order to have a time limit on the blocking operations we can use the following pattern: 
 
+1. Call the sigaction() with SA_RESTART not set so that the system calls are not restarted and SIGALRM as handler. 
+2. Call the alarm() or sigitimer() to establish a timer 
+3. Make the blocking call. 
+4. After system call returns or signal is received call the alarm() or sigitimer() once more to disable the timer in case the blocking operations has returned successfully
+5. Check to see whether the blocking system call failed with errno set to EINTR
+
+Following is snippet 
+```
+sa.sa_flags >= (argc>2) ? SA_RESTART:0;
+sigempty(&sa.sa_mask);
+
+sa.sa_handler = handler; 
+if(sigaction(SIGALRM, &sa, NULL == -1)
+	errExit("sigaction")
+
+alarm((argc>1) ? getInt(argv[1], GN_NONNEG, "num-secs") : 10); 
+numRead = read(STDIN_FILENO, buf, BUF_SIZE-1); 
+
+alarm(0)  /* disable the alram becuse we do not know if the blokcing call has returned or a signal has been raised.*/
+// finally work withe the data returned. 
+```
+
+## Suspending Execution for Fixed Interval (sleeping) 
+The best way to suspend a process for a fixed period of time sleep() is the best option. 
+
+**Low resolution sleep** 
+sleep() suspends the execution of a process for a number of seconds mentioned in the input or a signal is caught(interrupting the call) 
+
+```
+unsigned int sleep( unsigned int seconds); 
+```
+the sleep() method will either returns a 0 if it returns successfully meaning that the sleep timer has expired or it will return number of seconds still remaining in the sleep call if the process has been interrupted. 
+Because in most general Linux implementations sleep() is implemented using the alarm() and setitimer() methods it is advisible not to use sleep with these methods closely. 
+
+**High resolution sleeping: nanosleep** 
+nanosleep() is a function that does exactly what the sleep function does but it gives higher resolution on the time to sleep. 
+
+```
+int nanosleep(const struct timespec *request, struct timespec *remain); 
+	return 0 when successfully completes the sleep() or returns -1 when errors out or interrupted. 
+
+struct timespec {
+	time_t tv_sec; 
+	time_t tv_nsec; // can take value 0 to 999,999,999 
+}
+``` 
+Another advantage of using nanosleep is that it is not implemented using signal handlers and alarm() so it can be used safely with alarm() and sigitime() methods. 
+
+A limit to the use or accuracy of the nanosleep() is that it is dependent on the accuracy of the software clock and the granularity that the software clock supports. If the software clocks makes rounding errors (precision) then the nanosleep() method would not be able to give the exact accurate level of precision. 
+
+From Linux 2.6 a new method clock_nanosleep() has been introduced that uses the TIMER_ABSTIME which bypasses the earlier mentioned limitation and refers to the hardware clock. 
