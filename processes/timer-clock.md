@@ -111,3 +111,60 @@ Another advantage of using nanosleep is that it is not implemented using signal 
 A limit to the use or accuracy of the nanosleep() is that it is dependent on the accuracy of the software clock and the granularity that the software clock supports. If the software clocks makes rounding errors (precision) then the nanosleep() method would not be able to give the exact accurate level of precision. 
 
 From Linux 2.6 a new method clock_nanosleep() has been introduced that uses the TIMER_ABSTIME which bypasses the earlier mentioned limitation and refers to the hardware clock. 
+
+## POSIX clocks 
+POSIX clocks provide and API for accessing clocks that measure the time is nanoseconds.
+
+**Retriving the Clock value and types of POSIX clocks**
+The following are the supported methods used to get the clocks: 
+
+```
+#include<time.h> 
+
+int clock_gettime(clockid_t clockid, struct timespec *tp); 
+int clock_getres(clockid_t clockid, struct timespec *res); 
+``` 
+The clock_getime() will return timespec that specfies the time of the clock where are clock_getres() gives the resolution of the clock. 
+There are 5 types of clock types in POSIX clocks: 
+1. CLOCK_REALTIME - settable time which is system wide real-time clock. 
+2. CLOCK_MONOTONIC - Nonsettable monotonic clock which gives the time since system start up and this cannot be changed. 
+3. CLOCK_PROCESS_CPUTIME_ID - per process CPU time that the process has consumed. 
+4. CLOCK_THREAD_CPUTIME_ID - per thread CPU time clock 
+5. CLOCK_MONOTONIC_RAW - (since kernel 2.6.12) this is similar to MONOTONIC but has access to pure hardware based time. 
+
+Methods that return the clock id per thread and process. 
+```
+int clock_getcpuclockid(pid_t pid, clockid_t *clockid); 
+
+int pthread_getclockid(pthread_t thread, clock_id *clockid); 
+```
+
+**Improved high resolution sleeping: clock_nanosleep()** 
+This method is similar to nanosleep() method explained above. There are a few differences
+```
+#include<time.h> 
+
+int clock_nanosleep(clockid_t clockid, int flags, const struct timespec *request, struct timespec *remain); 
+```
+* the request and remain time specs are similar to nanosleep(). However the flag passed to the method can either consider relative time flag is set to 0 or it can consider absolute time TIMER_ABSTIME 
+* In the case where nanosleep() is used as a method of sleeping and waking of the process is controlled by a loop then depending on the signal frequency there may be innacurracies that lead to issues. In the case of clock_nanosleep() we can avoid this by first getting the clockid of the current time adding appropriate timer to the time and then calling the clock_nanosleep() using absolute timer flag. 
+* Unlike nanosleep the cock_nanosleep() can be involved with various clock types like REALTIME, ABSOLUTE TIME, CLOCK CPU TIME.
+
+```
+/* Retrieve the clock time */
+if( clock_gettime(CLOCK_REALTIME, &request) == -1) 
+	errExit("clock_realtime");
+
+request.tv_sec +=20 // adding 20 sec 
+
+s = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &request, NULL); 
+if (s!=0) {
+  if (s == EINTR){
+    printf("Interrupted by signal handler"); 
+  }else{
+    errExitEN(s, "clock_nanosleep"); 
+  }
+}
+```
+
+
