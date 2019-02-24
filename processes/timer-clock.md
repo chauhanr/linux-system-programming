@@ -167,4 +167,7 @@ if (s!=0) {
 }
 ```
 
+## Timers that notify via a file descriptor | timerfd API 
+The timerfd api in Linux gives us the ability to manage the timers using file descriptors. timefd gives us timer expiration notifications can be read from a file descriptor and can be monitored usin the poll(), epoll() and select() methods. 
 
+![Next](process-creation.md)
