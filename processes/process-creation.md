@@ -127,4 +127,42 @@ if (wait(&status) == -1) {
 
 ```
 
+## The vfork() system call 
+Because of the earlier implementation of fork() call where a lot of memory was wasted and before the
+improvement to the fork() were made with the use of copy on write semantics the vfork() method was
+developed by BSD. The vfork() call was much more efficient than the fork() command but its use cases
+were limited because of its behavior. 
+
+The vfork() system call is different from fork() in the following two ways: 
+1. No duplication of the memory of the parent takes place and the child shares the same memory space
+   as the parent. The sharing continues until exec() or exit() system call are called by the child. 
+2. Execution of the parent process is suspended until the child calls the exec() or exit()
+   functions. 
+
+As a result of this behavior the execution of the child process can lead to change in the parent
+memory and data. There are a few things that the child can do between fork() and exec() calls that
+does not effect the parent and one of them is working with file descriptors because vfork copies the
+file descriptors table for each process making it safe for child to change the fd. 
+
+With the vfork() semantic it is guaranteed that the child would run before the parent and the parent
+would wait for the child to call exec() or exit() before the parent and resume work. 
+
+vfork() is not a recommended system call because implementation details are not fully specified and
+the Linux versions that support it do not have consistent implementation therefore this call is not
+portable. Prefer the use of fork() over vfork() 
+
+
+## Race Conditions after fork() 
+Due to the nature of fork() command the order in which the parent and child will execute is not
+guaranteed. If you write a program assuming that a parent would run immediately after the fork()
+call then there is a possibility where your program may not behave as expected, specially if the
+parent has to do some heavy work after fork() which may take several CPU cycles. 
+
+There have been various tries to nail down how parent and child should behave after fork() by the
+kernel developers for now the kernel prefers the parent running after the fork() command but for how
+long is still indeterminate and depends on how the CPU cycles run. 
+
+Therefore to avoid the race condition between the child and parent process un the case of fork()
+call there are several patterns of synchronization that can be used. we will discuss them next. 
+
 
