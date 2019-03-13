@@ -165,4 +165,4 @@ long is still indeterminate and depends on how the CPU cycles run.
 Therefore to avoid the race condition between the child and parent process un the case of fork()
 call there are several patterns of synchronization that can be used. we will discuss them next. 
 
-
+[Next](process-termination.md)
