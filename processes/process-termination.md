@@ -40,3 +40,41 @@ During the normal termination of the process the following actions occur:
 
 
  
+## Exit Handlers 
+There are a lot of times that clean up activities need to be performed when a process terminates. A good pattern is to have the an exit handler 
+registered to the process which would be called when the processes exits using the exit() method. However this handler is not called when the process exits by calling the _ exit() or is terminated by a signal. 
+
+There are two ways that exit handlers can be registered for a process. 
+
+```
+#include <stdlib.h> 
+
+int atexit(void (*func)(void)); 
+
+```
+
+The function that is registered can neither have an input parameter nor a return variable. multiple exit handlers can be registered to a process and each can be called in the reverse order they are registered. 
+The limitations of the the atexit() are: 
+1. the function that is registered does not have any idea of the return or exit status of the process. 
+2. It does not have any input variable or parameters which limits the handlers utility. 
+
+The on_exit() handler works to overcome the afore mentioned limitations:
+
+```
+#define _BSD_SOURCE 
+#include <stdlib.h> 
+
+int on_exit(void (*func)(int, void *), void *arg); 
+
+// the function can be like 
+void func (int status, void *arg){
+   // perform some action 
+}
+
+``` 
+
+
+
+
+
+ 
