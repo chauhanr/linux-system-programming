@@ -165,4 +165,11 @@ long is still indeterminate and depends on how the CPU cycles run.
 Therefore to avoid the race condition between the child and parent process un the case of fork()
 call there are several patterns of synchronization that can be used. we will discuss them next. 
 
+## Avoid Race conditions using synchronization and signals 
+The pattern used to avoid the race conditions due to fork() is to use a signal to indicate when the
+one process has done its job while the other waits for the signal to take place. 
+
+Therefore the signal calls can set with the parent process so that it waits for the child to
+complete its work and then raise a signal so that the parent can resume its work.
+
 [Next](process-termination.md)
