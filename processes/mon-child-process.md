@@ -30,5 +30,41 @@ if (errno != ECHILD)
 	errExit("wait") 
 ```
 
+## waitpid() system call 
+The wait() system call has limitations that waitpid() is designed to overcome. 
 
+* If a parent process created multiple children, it is not possible to wait() for completion of a
+  specific child; we can only wait for the next child that terminates. 
+* If non of the children of a process have terminated wait() always blocks. It is perferable to
+  sometimes to perform a non blocking wait so that if no children have terminated we can obtain
+  immediate indication of this fact. 
+* Using wait() only gives information about which children have terminated. It is not possible to
+  be notified when a child stops due to a signal like SIGSTOP or SIGINT or when the child is
+  resumed using signal like SIGCOUNT. 
+
+```
+#include <sys/wait.h> 
+
+pid_t waitpid(pid_t pid, int *status, int options); 
+                    returns process ID of child 0 or -1 in case of error
+```
   
+Since the waitpid() takes in input of pid therefore can wait on the pid with the following rules: 
+* if pid is greater than 0, wait for the child with the specified process id. 
+* if the pid is 0 then wait for any children in the same process group as the caller (parent) 
+* if pid is less than -1 wait for any child whose process group is identifier equals the absolute
+  value of the pid specified. 
+* if pid equals -1 wait for any child. this is same as the wait() system call. 
+
+The options argument in the waitpid system call is a bit mask that can include (or) zero or more of
+the following flags: 
+
+* WUNTRACED - in addition to returing information about terminated children also returning
+  information when the child is stopped signal. 
+* WCONTINUED - Also returns status information about the stopped children that have been resumed by
+  delivery of signal SIGCONT 
+* WNOHANG - If no child specified by pid has yet changed state, then return immediately, instead of
+  blocking. In this case, the return value of the waitpid is 0. If the process on which waitpid() is
+  called has no chlidren then the syscall returns error number. 
+
+
