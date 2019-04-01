@@ -68,3 +68,28 @@ the following flags:
   called has no chlidren then the syscall returns error number. 
 
 
+## Process Termination from Signal Handlers 
+Some signals terminate the process by default. In such circumstances if we need to perform some
+clean up before the process ends and then terminate the process. If the child needs to inform the
+parent that it has terminated because of a signal, the child must disestablish itself and then raise
+same signal once again, which will terminate the signal once again. 
+
+```
+void handler(int sig) {
+    /* perform clean up */ 
+
+    signal(sig, SIG_DLF);  /* disestablish the signal */ 
+    raise(sig);            /* raise the signal again*/ 
+}
+```
+
+## wait3() and wait4() 
+These system calls do the same thing as waitpid() except that they also return resource usage as
+well. The information for usage includes: 
+* amount of CPU time used by the process 
+* memory management information 
+
+However the wait3 and wait4 usage is limited because of a lack of standardization. 
+
+
+
