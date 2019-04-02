@@ -91,5 +91,42 @@ well. The information for usage includes:
 
 However the wait3 and wait4 usage is limited because of a lack of standardization. 
 
+## Orphans and Zombies 
+The livetimes of parent and child processes are not all equal sometimes the parent outlives the
+child and at others child outlives the parent. 
+* Orphans - when a parent processes ends or is killed then the child processes can be called
+  orphans. The init process in the kernel becomes the parent of all orphans in the system. A call to
+  the getppid() call will always return 1 for a child process whose parent is no more. This is use
+  to determine if the childs true parent is still alive or not. 
+* Zombies - when the parent outlives the child what we are left with is a zombie process where all
+  the resources of the process have been released to the kernel but an entry into the kernel process
+  table is maintained. The zombie processes cannot be killed by any signals but can only end when
+  the parent of the process calls the wait() syscall on the zombie process. 
+
+If the parent of the zombie child process also ends without calling wait() the init process will 
+always call wait() syscall immediately after the zombie processes becomes it child.
+
+If however no wait() call is performed for zombies processes they continue to be entries in the
+kernel process table which eventually will lead to the process table to run out of space. 
+
+
+## SIGCHLD signal 
+
+The termination of a child process is an event that occurs asynchronously and therefore the parent
+cannot predict when one of its child will terminate. Therefore we can have two ways of handling the
+wait() syscall to prevent the zombie process creation: 
+1. The parent calls wait() or waitpid() without the WNOHANG flag. this would cause the parent
+   process to block till the child eleminates. 
+2. the parent can periodically perform the non blocking check (poll) for dead children via a call to
+   the waitpid() method with the WNOHANG flag switched on. 
+
+both these approaches are not good approaches the blocking option will block the parent indefinitely
+and the non blocking will cause the process to check in a loop. Therefore a new approach where we
+get an event of a SIGCHLD occuring and a handler handling the clean up is a better approach. 
+
+**Establishing a Handler for SIGCHLD** 
+
+
+
 
 
