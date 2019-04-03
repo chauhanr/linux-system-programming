@@ -125,7 +125,20 @@ and the non blocking will cause the process to check in a loop. Therefore a new 
 get an event of a SIGCHLD occuring and a handler handling the clean up is a better approach. 
 
 **Establishing a Handler for SIGCHLD** 
+The SIGCHLD signal is sent to the parent process whenever one of its children terminates. By default
+the signal is ignored but we can make a signal handler that can caputre this signal. In the signal
+handler we can call the wait() syscall and that should handle the process termination well. However
+as we know if multiple signals of a similar kind are emitted they are never queued infact only one
+signal of a kind is kept. As a result we can have series of child process terminated in succession
+and the signal handler will only process one such signal leading to the possiblity of zombie
+processes. 
 
+To reap all the dead child processes we need a loop code in the signal handler
+```
+while( waitpid(-1, NULL, WHNOHANG) > 0 )
+   continue; 
+```
+this will try and listen to all the child for the current process and not block the signal calls. 
 
 
 
