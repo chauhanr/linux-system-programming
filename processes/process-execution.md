@@ -31,3 +31,16 @@ The errorno that the execve can return are:
 5. E2BIG - The space required for the argument and env variables is more that the allowable limit. 
 
 
+## The exec() library functions 
+The library functions that allow for the exec of a new process all built on top of the execve()
+syscall and they all differ in the way they are names, way they use path variables and environment
+variables. 
+
+* execle() - the syscall takes a pathname, list of arguments and a list of variables that denote the
+  environment variables needed using the envp array. 
+* execlp()/ execvp() - this syscall will take a filename (string) as first parameter and will look for the
+  file under the directories and locations specified in the PATH variable. These also take a pointer
+  to an array of argument variables sent over the first of which argv[0] is the main method on the
+  process that is being started. 
+
+
