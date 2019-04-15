@@ -73,8 +73,5 @@ void func (int status, void *arg){
 
 ``` 
 
-
-
-
-
+![Next](mon-child-process.md)
  
