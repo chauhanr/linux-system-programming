@@ -41,6 +41,36 @@ variables.
 * execlp()/ execvp() - this syscall will take a filename (string) as first parameter and will look for the
   file under the directories and locations specified in the PATH variable. These also take a pointer
   to an array of argument variables sent over the first of which argv[0] is the main method on the
-  process that is being started. 
+
+## Interpreter Scripts 
+Shell scripts and interpreter scripts on the Linux operating system are ones which are not compiled
+into machine code instead the code is interpreted line by line and executed. The script file starts
+with a #! command followed by the absolute path to the interpreter. e.g. #! /bin/bash 
+
+All of these scripts file will eventually be executed by the execve() method of Linux and the
+arguments and optional parameters is passed to the execve() by the interpreter. 
+
+## File Descriptors and exec() 
+By default, all the file descriptors opened by the programs that call exec() remain open across the
+exec() and are available for use by the new program. This feature is taken advantage of by the shell
+to handle I/O redirection for the programs that executes. 
+
+```
+ ls /tmp > dir.txt 
+```
+
+in the command above shell performs the following steps: 
+1. A fork() is performed to create child process that is also running a copy of the shell. 
+2. child process opens dir.txt for output using file descriptor 1 (standard output) 
+3. The child shell executes the ls program. The ls command will write the output to the standard
+   output that is redirected to the dir.txt file. 
+
+Not all command on the Linux OS will following the fork method there are a number of shell commands
+that are not run by running fork(). This is done for 2 reasons: 
+1. efficiency 
+2. to have the indented side effect of the command on the shell itself. 
+
+e.g. of built in shell commands include pwd, cd, echo, test, exec, exit, read, set etc. 
+
 
 
